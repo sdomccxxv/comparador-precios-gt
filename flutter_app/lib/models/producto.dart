@@ -5,6 +5,7 @@ class Producto {
   final double precio;
   final String url;
   final String? imagen;
+  final String? ean;
 
   Producto({
     required this.tienda,
@@ -13,6 +14,7 @@ class Producto {
     required this.precio,
     required this.url,
     this.imagen,
+    this.ean,
   });
 
   factory Producto.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class Producto {
       precio: (json['precio'] as num).toDouble(),
       url: json['url'] ?? '',
       imagen: json['imagen'],
+      ean: json['ean']?.toString(),
     );
   }
 

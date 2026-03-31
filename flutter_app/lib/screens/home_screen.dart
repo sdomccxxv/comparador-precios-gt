@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/producto.dart';
 import '../services/api_service.dart';
-import 'results_screen.dart';
+import 'result_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,10 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ResultsScreen(
-            query: query,
-            productos: productos,
-          ),
+          builder: (_) => ResultsScreen(query: query, productos: productos),
         ),
       );
     } catch (e) {
@@ -55,8 +51,11 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 60),
 
               // Logo / título
-              const Icon(Icons.shopping_cart_rounded,
-                  size: 64, color: Color(0xFF1976D2)),
+              const Icon(
+                Icons.shopping_cart_rounded,
+                size: 64,
+                color: Color(0xFF1976D2),
+              ),
               const SizedBox(height: 16),
               const Text(
                 'Comparador GT',
@@ -85,9 +84,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     icono: Icons.store,
                   ),
                   const SizedBox(width: 16),
-                  const Text('vs',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.grey)),
+                  const Text(
+                    'vs',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(width: 16),
                   _TiendaBadge(
                     nombre: 'La Torre',
@@ -119,8 +122,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide:
-                        const BorderSide(color: Color(0xFF1976D2), width: 2),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF1976D2),
+                      width: 2,
+                    ),
                   ),
                 ),
               ),
@@ -153,7 +158,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       : const Text(
                           'Buscar y comparar',
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                 ),
               ),
@@ -170,14 +177,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline,
-                          color: Colors.red.shade700, size: 20),
+                      Icon(
+                        Icons.error_outline,
+                        color: Colors.red.shade700,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'No se pudo conectar al servidor. ¿Está corriendo el backend?',
                           style: TextStyle(
-                              color: Colors.red.shade700, fontSize: 13),
+                            color: Colors.red.shade700,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ],
@@ -215,17 +227,22 @@ class _TiendaBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Icon(icono, color: color, size: 16),
           const SizedBox(width: 6),
-          Text(nombre,
-              style: TextStyle(
-                  color: color, fontWeight: FontWeight.w600, fontSize: 13)),
+          Text(
+            nombre,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
         ],
       ),
     );

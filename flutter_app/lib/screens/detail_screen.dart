@@ -7,9 +7,8 @@ class DetailScreen extends StatelessWidget {
 
   const DetailScreen({super.key, required this.producto});
 
-  Color get _colorTienda => producto.esWalmart
-      ? const Color(0xFF0071CE)
-      : const Color(0xFFE53935);
+  Color get _colorTienda =>
+      producto.esWalmart ? const Color(0xFF0071CE) : const Color(0xFFE53935);
 
   Future<void> _abrirEnTienda() async {
     final uri = Uri.parse(producto.url);
@@ -26,9 +25,10 @@ class DetailScreen extends StatelessWidget {
         title: Text(
           producto.tienda,
           style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: _colorTienda),
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: _colorTienda,
+          ),
         ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1A1A2E),
@@ -54,13 +54,13 @@ class DetailScreen extends StatelessWidget {
                       errorBuilder: (_, __, ___) => Icon(
                         Icons.shopping_bag_outlined,
                         size: 80,
-                        color: _colorTienda.withOpacity(0.3),
+                        color: _colorTienda.withValues(alpha: 0.3),
                       ),
                     )
                   : Icon(
                       Icons.shopping_bag_outlined,
                       size: 80,
-                      color: _colorTienda.withOpacity(0.3),
+                      color: _colorTienda.withValues(alpha: 0.3),
                     ),
             ),
 
@@ -72,9 +72,11 @@ class DetailScreen extends StatelessWidget {
                   // Badge tienda
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 4),
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: _colorTienda.withOpacity(0.1),
+                      color: _colorTienda.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -102,9 +104,19 @@ class DetailScreen extends StatelessWidget {
                   // Marca
                   Text(
                     producto.marca,
-                    style: const TextStyle(
-                        fontSize: 14, color: Colors.grey),
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
+                  if (producto.ean != null && producto.ean!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'EAN: ${producto.ean}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF666666),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
 
                   // Precio destacado
@@ -112,17 +124,17 @@ class DetailScreen extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: _colorTienda.withOpacity(0.06),
+                      color: _colorTienda.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                          color: _colorTienda.withOpacity(0.2)),
+                        color: _colorTienda.withValues(alpha: 0.2),
+                      ),
                     ),
                     child: Column(
                       children: [
                         const Text(
                           'Precio',
-                          style:
-                              TextStyle(fontSize: 13, color: Colors.grey),
+                          style: TextStyle(fontSize: 13, color: Colors.grey),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -148,7 +160,9 @@ class DetailScreen extends StatelessWidget {
                       label: const Text(
                         'Ver en la tienda',
                         style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _colorTienda,

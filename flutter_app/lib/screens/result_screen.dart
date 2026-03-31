@@ -28,10 +28,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
     return widget.productos;
   }
 
-  int get _countWalmart =>
-      widget.productos.where((p) => p.esWalmart).length;
-  int get _countTorre =>
-      widget.productos.where((p) => !p.esWalmart).length;
+  int get _countWalmart => widget.productos.where((p) => p.esWalmart).length;
+  int get _countTorre => widget.productos.where((p) => !p.esWalmart).length;
 
   @override
   Widget build(BuildContext context) {
@@ -106,8 +104,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) =>
-                                DetailScreen(producto: producto),
+                            builder: (_) => DetailScreen(producto: producto),
                           ),
                         ),
                       );
@@ -143,10 +140,11 @@ class _ResumenChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: seleccionado ? color : color.withOpacity(0.08),
+          color: seleccionado ? color : color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color: seleccionado ? color : color.withOpacity(0.2)),
+            color: seleccionado ? color : color.withValues(alpha: 0.2),
+          ),
         ),
         child: Text(
           '$label ($count)',
@@ -172,9 +170,8 @@ class _ProductoCard extends StatelessWidget {
     required this.onTap,
   });
 
-  Color get _colorTienda => producto.esWalmart
-      ? const Color(0xFF0071CE)
-      : const Color(0xFFE53935);
+  Color get _colorTienda =>
+      producto.esWalmart ? const Color(0xFF0071CE) : const Color(0xFFE53935);
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +187,7 @@ class _ProductoCard extends StatelessWidget {
               : Border.all(color: Colors.grey.shade100),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -209,8 +206,8 @@ class _ProductoCard extends StatelessWidget {
                         width: 70,
                         height: 70,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _PlaceholderImagen(
-                            color: _colorTienda),
+                        errorBuilder: (_, __, ___) =>
+                            _PlaceholderImagen(color: _colorTienda),
                       )
                     : _PlaceholderImagen(color: _colorTienda),
               ),
@@ -226,9 +223,11 @@ class _ProductoCard extends StatelessWidget {
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: _colorTienda.withOpacity(0.1),
+                            color: _colorTienda.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -244,7 +243,9 @@ class _ProductoCard extends StatelessWidget {
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.green.shade50,
                               borderRadius: BorderRadius.circular(8),
@@ -275,9 +276,21 @@ class _ProductoCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       producto.marca,
-                      style: const TextStyle(
-                          fontSize: 11, color: Colors.grey),
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),
+                    if (producto.ean != null && producto.ean!.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'EAN: ${producto.ean}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -298,8 +311,7 @@ class _ProductoCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Icon(Icons.chevron_right,
-                      color: Colors.grey, size: 18),
+                  const Icon(Icons.chevron_right, color: Colors.grey, size: 18),
                 ],
               ),
             ],
@@ -320,7 +332,7 @@ class _PlaceholderImagen extends StatelessWidget {
       width: 70,
       height: 70,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(Icons.shopping_bag_outlined, color: color, size: 30),
