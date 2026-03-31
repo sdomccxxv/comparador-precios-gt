@@ -28,6 +28,37 @@ class _ResultsScreenState extends State<ResultsScreen> {
     return widget.productos;
   }
 
+  String _eanKey(Producto p) => (p.ean ?? '').trim();
+
+  List<Producto> get _productosAgrupados {
+    final filtrados = _productosFiltrados;
+    final conEan = filtrados.where((p) => _eanKey(p).isNotEmpty).toList();
+    final sinEan = filtrados.where((p) => _eanKey(p).isEmpty).toList();
+
+    conEan.sort((a, b) {
+      final eanCompare = _eanKey(a).compareTo(_eanKey(b));
+      if (eanCompare != 0) return eanCompare;
+      return a.precio.compareTo(b.precio);
+    });
+
+    sinEan.sort((a, b) => a.precio.compareTo(b.precio));
+    return [...conEan, ...sinEan];
+  }
+
+  bool _esInicioGrupoEan(List<Producto> lista, int index) {
+    final actual = _eanKey(lista[index]);
+    if (actual.isEmpty) return false;
+    if (index == 0) return true;
+    return _eanKey(lista[index - 1]) != actual;
+  }
+
+  double get _precioMinimoFiltrado {
+    if (_productosAgrupados.isEmpty) return 0;
+    return _productosAgrupados
+        .map((p) => p.precio)
+        .reduce((a, b) => a < b ? a : b);
+  }
+
   int get _countWalmart => widget.productos.where((p) => p.esWalmart).length;
   int get _countTorre => widget.productos.where((p) => !p.esWalmart).length;
 
@@ -85,7 +116,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
           // Lista de productos
           Expanded(
-            child: _productosFiltrados.isEmpty
+            child: _productosAgrupados.isEmpty
                 ? const Center(
                     child: Text(
                       'No hay resultados',
@@ -94,19 +125,31 @@ class _ResultsScreenState extends State<ResultsScreen> {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.all(12),
-                    itemCount: _productosFiltrados.length,
+                    itemCount: _productosAgrupados.length,
                     itemBuilder: (context, index) {
-                      final producto = _productosFiltrados[index];
-                      final esMasBarato = index == 0 && _filtro == 'Todos';
-                      return _ProductoCard(
-                        producto: producto,
-                        esMasBarato: esMasBarato,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => DetailScreen(producto: producto),
+                      final producto = _productosAgrupados[index];
+                      final esMasBarato = producto.precio == _precioMinimoFiltrado;
+                      final mostrarSeparador = _esInicioGrupoEan(
+                        _productosAgrupados,
+                        index,
+                      );
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (mostrarSeparador)
+                            _SeparadorGrupoEan(ean: _eanKey(producto)),
+                          _ProductoCard(
+                            producto: producto,
+                            esMasBarato: esMasBarato,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DetailScreen(producto: producto),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       );
                     },
                   ),
@@ -219,7 +262,9 @@ class _ProductoCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Badge tienda + más barato
-                    Row(
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -239,8 +284,27 @@ class _ProductoCard extends StatelessWidget {
                             ),
                           ),
                         ),
+                        if (producto.coincideAmbas) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'EAN coincidente',
+                              style: TextStyle(
+                                color: Colors.amber.shade900,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
                         if (esMasBarato) ...[
-                          const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
@@ -336,6 +400,35 @@ class _PlaceholderImagen extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(Icons.shopping_bag_outlined, color: color, size: 30),
+    );
+  }
+}
+
+class _SeparadorGrupoEan extends StatelessWidget {
+  final String ean;
+
+  const _SeparadorGrupoEan({required this.ean});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, top: 4),
+      child: Row(
+        children: [
+          Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1)),
+          const SizedBox(width: 8),
+          Text(
+            'EAN: $ean',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1)),
+        ],
+      ),
     );
   }
 }

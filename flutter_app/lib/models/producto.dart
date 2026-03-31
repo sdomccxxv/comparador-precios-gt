@@ -6,6 +6,7 @@ class Producto {
   final String url;
   final String? imagen;
   final String? ean;
+  final bool coincideAmbas;
 
   Producto({
     required this.tienda,
@@ -15,6 +16,7 @@ class Producto {
     required this.url,
     this.imagen,
     this.ean,
+    this.coincideAmbas = false,
   });
 
   factory Producto.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class Producto {
       url: json['url'] ?? '',
       imagen: json['imagen'],
       ean: json['ean']?.toString(),
+      coincideAmbas: json['coincide_ambas'] == true,
     );
   }
 

@@ -83,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: const Color(0xFF0071CE),
                     icono: Icons.store,
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   const Text(
                     'vs',
                     style: TextStyle(
@@ -91,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.grey,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   _TiendaBadge(
                     nombre: 'La Torre',
                     color: const Color(0xFFE53935),
