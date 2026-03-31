@@ -35,18 +35,15 @@ Ejemplos:
 - `fix(backend): corrige parseo de respuesta json`
 - `chore(repo): actualiza reglas de gitignore`
 
-## 3. Flujo de trabajo
-1. Crear rama desde `main`.
+## 3. Flujo de trabajo (proyecto individual)
+1. Crear rama desde `main` (opcional, recomendado para cambios grandes).
 2. Hacer cambios pequenos y commits atomicos.
-3. Subir rama y abrir Pull Request hacia `main`.
-4. Revisar y aprobar PR.
-5. Hacer squash merge para mantener historial limpio.
+3. Integrar cambios a `main` sin Pull Request cuando el cambio este validado localmente.
+4. Etiquetar versiones estables con tags semanticos.
 
-## 4. Reglas de Pull Request
-- Titulo claro y en espanol.
-- Describir: problema, solucion y como probar.
-- Incluir evidencia si aplica (capturas, logs, pasos).
-- PR pequeno y enfocado en una sola cosa.
+## 4. Uso de Pull Request (opcional)
+- No es obligatorio en este proyecto mientras lo trabaje una sola persona.
+- Puede usarse en el futuro si se suma colaboracion o si se desea revision formal antes de merge.
 
 ## 5. Versionado y releases
 - Crear tags semanticos en `main`: `vX.Y.Z`.
@@ -55,3 +52,4 @@ Ejemplos:
 ## 6. Recomendaciones para este repo
 - Mantener cambios de `flutter_app/` y `backend/` en commits separados cuando sea posible.
 - Evitar mezclar refactor y feature en el mismo commit.
+- Antes de mergear a `main`, correr pruebas basicas en Flutter y backend para evitar regresiones.
