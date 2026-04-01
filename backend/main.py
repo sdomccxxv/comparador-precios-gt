@@ -50,7 +50,8 @@ def extraer_imagen(item: dict) -> str | None:
                 return images[0].get("imageUrl")
     except (KeyError, IndexError, TypeError):
         return None
-    
+
+
 def extraer_ean(item: dict) -> str | None:
     try:
         items = item.get("items", [])
@@ -70,6 +71,7 @@ def extraer_ean(item: dict) -> str | None:
         pass
     return None
 
+
 def formatear_producto(item: dict, tienda: str, base_url: str) -> dict | None:
     precio = extraer_precio(item)
     if precio is None:
@@ -87,6 +89,18 @@ def formatear_producto(item: dict, tienda: str, base_url: str) -> dict | None:
     }
 
 
+def _marcar_y_ordenar(todos: list[dict]) -> tuple[list[dict], set]:
+    eans_walmart = {p["ean"] for p in todos if p["tienda"] == "Walmart GT" and p["ean"]}
+    eans_torre   = {p["ean"] for p in todos if p["tienda"] == "La Torre"   and p["ean"]}
+    eans_comunes = eans_walmart & eans_torre
+
+    for p in todos:
+        p["coincide_ambas"] = p["ean"] in eans_comunes if p["ean"] else False
+
+    todos.sort(key=lambda x: (not x["coincide_ambas"], x["precio"]))
+    return todos, eans_comunes
+
+
 async def buscar_en_tienda(
     client: httpx.AsyncClient,
     tienda: str,
@@ -100,12 +114,11 @@ async def buscar_en_tienda(
     try:
         resp = await client.get(url, headers=HEADERS, timeout=12)
         print(f"[{tienda}] Status: {resp.status_code}")
-        
-        # Aceptamos 200 y 206 (Partial Content)
+
         if resp.status_code not in (200, 206):
             print(f"[{tienda}] Status inesperado: {resp.status_code}")
             return []
-        
+
         productos = resp.json()
         print(f"[{tienda}] Productos recibidos: {len(productos)}")
         resultados = []
@@ -114,18 +127,66 @@ async def buscar_en_tienda(
             if p:
                 resultados.append(p)
         print(f"[{tienda}] Productos con precio: {len(resultados)}")
-
-        #if productos:
-        #    print(f"[{tienda}] Keys: {list(productos[0].keys())}")
-        
         return resultados
     except Exception as e:
         print(f"[{tienda}] Error: {e}")
         return []
 
+
+async def buscar_en_tienda_por_ean(
+    client: httpx.AsyncClient,
+    tienda: str,
+    base_url: str,
+    ean: str,
+) -> list[dict]:
+    # Normalizar EAN: quitar ceros a la izquierda para comparar
+    ean_norm = ean.lstrip('0')
+
+    # VTEX endpoint específico para buscar por EAN
+    url = (
+        f"{base_url}/api/catalog_system/pub/products/search"
+        f"?fq=alternateIds_Ean:{ean}&_from=0&_to=5"
+    )
+    try:
+        resp = await client.get(url, headers=HEADERS, timeout=12)
+        print(f"[{tienda}] EAN Status: {resp.status_code}")
+
+        if resp.status_code not in (200, 206):
+            return []
+
+        productos = resp.json()
+        print(f"[{tienda}] EAN Productos recibidos: {len(productos)}")
+
+        # Si no encuentra con el EAN original, intentar con ceros adicionales
+        if not productos and not ean.startswith('0'):
+            url2 = (
+                f"{base_url}/api/catalog_system/pub/products/search"
+                f"?fq=alternateIds_Ean:0{ean}&_from=0&_to=5"
+            )
+            resp2 = await client.get(url2, headers=HEADERS, timeout=12)
+            if resp2.status_code in (200, 206):
+                productos = resp2.json()
+                print(f"[{tienda}] EAN con 0 Productos: {len(productos)}")
+
+        resultados = []
+        for item in productos:
+            p = formatear_producto(item, tienda, base_url)
+            if p:
+                resultados.append(p)
+        return resultados
+    except Exception as e:
+        print(f"[{tienda}] Error EAN: {e}")
+        return []
+
+
 @app.get("/")
 def root():
     return {"mensaje": "Comparador de Precios GT funcionando ✅"}
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 
 @app.get("/buscar")
@@ -140,27 +201,55 @@ async def buscar(
         resultados_por_tienda = await asyncio.gather(*tareas)
 
     todos = [p for lista in resultados_por_tienda for p in lista]
-
-    # Encontrar EANs que aparecen en ambas tiendas
-    eans_walmart = {p["ean"] for p in todos if p["tienda"] == "Walmart GT" and p["ean"]}
-    eans_torre   = {p["ean"] for p in todos if p["tienda"] == "La Torre"   and p["ean"]}
-    eans_comunes = eans_walmart & eans_torre
-
-    # Marcar productos que coinciden en ambas tiendas
-    for p in todos:
-        p["coincide_ambas"] = p["ean"] in eans_comunes if p["ean"] else False
-
-    # Ordenar: primero los que coinciden en ambas, luego por precio
-    todos.sort(key=lambda x: (not x["coincide_ambas"], x["precio"]))
+    todos, eans_comunes = _marcar_y_ordenar(todos)
 
     walmart = [p for p in todos if p["tienda"] == "Walmart GT"]
     torre   = [p for p in todos if p["tienda"] == "La Torre"]
 
     return {
-        "query":          q,
-        "total":          len(todos),
-        "walmart_count":  len(walmart),
-        "latorre_count":  len(torre),
-        "coincidencias":  len(eans_comunes),
-        "resultados":     todos,
+        "query":         q,
+        "total":         len(todos),
+        "walmart_count": len(walmart),
+        "latorre_count": len(torre),
+        "coincidencias": len(eans_comunes),
+        "resultados":    todos,
+    }
+
+
+@app.get("/buscar-ean")
+async def buscar_por_ean(
+    ean: str = Query(..., min_length=1, description="EAN a buscar")
+):
+    async with httpx.AsyncClient() as client:
+        tareas = [
+            buscar_en_tienda_por_ean(client, tienda, base_url, ean)
+            for tienda, base_url in TIENDAS.items()
+        ]
+        resultados_por_tienda = await asyncio.gather(*tareas)
+
+    todos = [p for lista in resultados_por_tienda for p in lista]
+
+    # Si no encontró nada por EAN exacto, hacer búsqueda por texto como fallback
+    if not todos:
+        print(f"[EAN] Sin resultados para {ean}, usando búsqueda por texto")
+        async with httpx.AsyncClient() as client:
+            tareas = [
+                buscar_en_tienda(client, tienda, base_url, ean)
+                for tienda, base_url in TIENDAS.items()
+            ]
+            resultados_por_tienda = await asyncio.gather(*tareas)
+        todos = [p for lista in resultados_por_tienda for p in lista]
+
+    todos, eans_comunes = _marcar_y_ordenar(todos)
+
+    walmart = [p for p in todos if p["tienda"] == "Walmart GT"]
+    torre   = [p for p in todos if p["tienda"] == "La Torre"]
+
+    return {
+        "query":         ean,
+        "total":         len(todos),
+        "walmart_count": len(walmart),
+        "latorre_count": len(torre),
+        "coincidencias": len(eans_comunes),
+        "resultados":    todos,
     }
