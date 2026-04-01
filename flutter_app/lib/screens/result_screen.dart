@@ -30,20 +30,35 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
   String _eanKey(Producto p) => (p.ean ?? '').trim();
 
-  List<Producto> get _productosAgrupados {
-    final filtrados = _productosFiltrados;
-    final conEan = filtrados.where((p) => _eanKey(p).isNotEmpty).toList();
-    final sinEan = filtrados.where((p) => _eanKey(p).isEmpty).toList();
+List<Producto> get _productosAgrupados {
+  final filtrados = _productosFiltrados;
 
-    conEan.sort((a, b) {
-      final eanCompare = _eanKey(a).compareTo(_eanKey(b));
-      if (eanCompare != 0) return eanCompare;
-      return a.precio.compareTo(b.precio);
-    });
+  // Separar coincidentes, con EAN sin coincidencia, y sin EAN
+  final coincidentes = filtrados.where((p) => p.coincideAmbas).toList();
+  final conEanSinCoincidir = filtrados
+      .where((p) => !p.coincideAmbas && (p.ean ?? '').isNotEmpty)
+      .toList();
+  final sinEan = filtrados
+      .where((p) => (p.ean ?? '').isEmpty)
+      .toList();
 
-    sinEan.sort((a, b) => a.precio.compareTo(b.precio));
-    return [...conEan, ...sinEan];
-  }
+  // Ordenar cada grupo por EAN y luego precio
+  coincidentes.sort((a, b) {
+    final eanCompare = _eanKey(a).compareTo(_eanKey(b));
+    if (eanCompare != 0) return eanCompare;
+    return a.precio.compareTo(b.precio);
+  });
+
+  conEanSinCoincidir.sort((a, b) {
+    final eanCompare = _eanKey(a).compareTo(_eanKey(b));
+    if (eanCompare != 0) return eanCompare;
+    return a.precio.compareTo(b.precio);
+  });
+
+  sinEan.sort((a, b) => a.precio.compareTo(b.precio));
+
+  return [...coincidentes, ...conEanSinCoincidir, ...sinEan];
+}
 
   bool _esInicioGrupoEan(List<Producto> lista, int index) {
     final actual = _eanKey(lista[index]);
@@ -52,12 +67,17 @@ class _ResultsScreenState extends State<ResultsScreen> {
     return _eanKey(lista[index - 1]) != actual;
   }
 
-  double get _precioMinimoFiltrado {
-    if (_productosAgrupados.isEmpty) return 0;
-    return _productosAgrupados
-        .map((p) => p.precio)
-        .reduce((a, b) => a < b ? a : b);
+  Map<String, double> get _precioMinimoPorEan {
+  final Map<String, double> minimos = {};
+  for (final p in _productosAgrupados) {
+    final ean = _eanKey(p);
+    if (ean.isEmpty) continue;
+    if (!minimos.containsKey(ean) || p.precio < minimos[ean]!) {
+      minimos[ean] = p.precio;
+    }
   }
+  return minimos;
+}
 
   int get _countWalmart => widget.productos.where((p) => p.esWalmart).length;
   int get _countTorre => widget.productos.where((p) => !p.esWalmart).length;
@@ -128,7 +148,14 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     itemCount: _productosAgrupados.length,
                     itemBuilder: (context, index) {
                       final producto = _productosAgrupados[index];
-                      final esMasBarato = producto.precio == _precioMinimoFiltrado;
+                      final ean = _eanKey(producto);
+                      final minimos = _precioMinimoPorEan;
+
+                      // Es más barato solo si tiene EAN y es el mínimo de su grupo
+                      final esMasBarato = ean.isNotEmpty &&
+                          minimos.containsKey(ean) &&
+                          producto.precio == minimos[ean];
+
                       final mostrarSeparador = _esInicioGrupoEan(
                         _productosAgrupados,
                         index,
@@ -138,7 +165,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (mostrarSeparador)
-                            _SeparadorGrupoEan(ean: _eanKey(producto)),
+                            _SeparadorGrupoEan(ean: ean),
                           _ProductoCard(
                             producto: producto,
                             esMasBarato: esMasBarato,

@@ -34,7 +34,7 @@ def extraer_precio(item: dict) -> float | None:
             sellers = items[0].get("sellers", [])
             if sellers:
                 offer = sellers[0].get("commertialOffer", {})
-                precio = offer.get("Price") or offer.get("ListPrice")
+                precio = offer.get("FullSellingPrice") or offer.get("Price") or offer.get("ListPrice")
                 return float(precio) if precio else None
     except Exception:
         pass
@@ -59,16 +59,16 @@ def extraer_ean(item: dict) -> str | None:
 
         ean_directo = items[0].get("ean")
         if ean_directo:
-            return str(ean_directo)
+            return str(ean_directo).lstrip('0') or None
 
         ref = items[0].get("referenceId", [])
         for r in ref:
             if r.get("Key") in ("EAN", "RefId"):
-                return r.get("Value")
+                valor = r.get("Value", "")
+                return valor.lstrip('0') or None
     except (KeyError, IndexError, TypeError):
         pass
     return None
-
 
 def formatear_producto(item: dict, tienda: str, base_url: str) -> dict | None:
     precio = extraer_precio(item)
@@ -95,7 +95,7 @@ async def buscar_en_tienda(
 ) -> list[dict]:
     url = (
         f"{base_url}/api/catalog_system/pub/products/search"
-        f"?ft={query}&_from=0&_to=19"
+        f"?ft={query}&_from=0&_to=49"
     )
     try:
         resp = await client.get(url, headers=HEADERS, timeout=12)
