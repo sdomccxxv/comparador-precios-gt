@@ -34,12 +34,24 @@ def extraer_precio(item: dict) -> float | None:
             sellers = items[0].get("sellers", [])
             if sellers:
                 offer = sellers[0].get("commertialOffer", {})
-                precio = offer.get("FullSellingPrice") or offer.get("Price") or offer.get("ListPrice")
+                precio = offer.get("Price") or offer.get("ListPrice")
                 return float(precio) if precio else None
     except Exception:
         pass
     return None
 
+def extraer_list_price(item: dict) -> float | None:
+    try:
+        items = item.get("items", [])
+        if items:
+            sellers = items[0].get("sellers", [])
+            if sellers:
+                offer = sellers[0].get("commertialOffer", {})
+                list_price = offer.get("ListPrice")
+                return float(list_price) if list_price else None
+    except Exception:
+        pass
+    return None
 
 def extraer_imagen(item: dict) -> str | None:
     try:
@@ -77,15 +89,17 @@ def formatear_producto(item: dict, tienda: str, base_url: str) -> dict | None:
     if precio is None:
         return None
 
+    list_price = extraer_list_price(item)
     link = item.get("linkText", "")
     return {
-        "tienda":  tienda,
-        "nombre":  item.get("productName", "Sin nombre"),
-        "marca":   item.get("brand", ""),
-        "precio":  precio,
-        "url":     f"{base_url}/{link}/p",
-        "imagen":  extraer_imagen(item),
-        "ean":     extraer_ean(item),
+        "tienda":      tienda,
+        "nombre":      item.get("productName", "Sin nombre"),
+        "marca":       item.get("brand", ""),
+        "precio":      precio,
+        "precio_antes": list_price if list_price and list_price > precio else None,
+        "url":         f"{base_url}/{link}/p",
+        "imagen":      extraer_imagen(item),
+        "ean":         extraer_ean(item),
     }
 
 
