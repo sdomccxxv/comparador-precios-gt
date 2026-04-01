@@ -27,4 +27,26 @@ class ApiService {
       throw Exception('No se pudo conectar al servidor: $e');
     }
   }
+
+  static Future<List<Producto>> buscarPorEan(String ean) async {
+    // Primero intentamos búsqueda directa por EAN
+    final uri = Uri.parse('$baseUrl/buscar-ean?ean=${Uri.encodeComponent(ean)}');
+
+    try {
+      final response = await http.get(uri).timeout(
+        const Duration(seconds: 60),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 206) {
+        final data = jsonDecode(response.body);
+        final List resultados = data['resultados'];
+        if (resultados.isNotEmpty) {
+          return resultados.map((json) => Producto.fromJson(json)).toList();
+        }
+      }
+    } catch (_) {}
+
+    // Si no encuentra por EAN, busca por texto
+    return buscarProductos(ean);
+  }  
 }
