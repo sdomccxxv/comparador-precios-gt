@@ -1,7 +1,11 @@
+import os
+import asyncio
+from datetime import datetime, timedelta, timezone
+
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
-import asyncio
+from supabase import create_client, Client
 
 app = FastAPI(title="Comparador de Precios GT")
 
@@ -26,6 +30,51 @@ TIENDAS = {
     "La Torre":   "https://www.latorre.com.gt",
 }
 
+_SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+_SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
+
+supabase_client: Client | None = None
+if _SUPABASE_URL and _SUPABASE_KEY:
+    supabase_client = create_client(_SUPABASE_URL, _SUPABASE_KEY)
+    print("[Supabase] Cliente inicializado ✅")
+else:
+    print("[Supabase] Variables de entorno no configuradas, historial desactivado ⚠️")
+
+
+async def guardar_historial(productos: list[dict]) -> None:
+    if supabase_client is None:
+        return
+    con_ean = [p for p in productos if p.get("ean")]
+    if not con_ean:
+        return
+
+    def _sync():
+        hace_6h = (datetime.now(timezone.utc) - timedelta(hours=6)).isoformat()
+        for p in con_ean:
+            try:
+                existe = (
+                    supabase_client.table("historial_precios")
+                    .select("id")
+                    .eq("ean", p["ean"])
+                    .eq("tienda", p["tienda"])
+                    .gte("fecha", hace_6h)
+                    .limit(1)
+                    .execute()
+                )
+                if existe.data:
+                    continue
+                supabase_client.table("historial_precios").insert({
+                    "ean":    p["ean"],
+                    "tienda": p["tienda"],
+                    "nombre": p["nombre"],
+                    "marca":  p.get("marca", ""),
+                    "precio": p["precio"],
+                }).execute()
+            except Exception as e:
+                print(f"[Supabase] Error insertando: {e}")
+
+    await asyncio.to_thread(_sync)
+
 
 def extraer_precio(item: dict) -> float | None:
     try:
@@ -40,6 +89,7 @@ def extraer_precio(item: dict) -> float | None:
         pass
     return None
 
+
 def extraer_list_price(item: dict) -> float | None:
     try:
         items = item.get("items", [])
@@ -52,6 +102,7 @@ def extraer_list_price(item: dict) -> float | None:
     except Exception:
         pass
     return None
+
 
 def extraer_imagen(item: dict) -> str | None:
     try:
@@ -69,11 +120,9 @@ def extraer_ean(item: dict) -> str | None:
         items = item.get("items", [])
         if not items:
             return None
-
         ean_directo = items[0].get("ean")
         if ean_directo:
             return str(ean_directo).lstrip('0') or None
-
         ref = items[0].get("referenceId", [])
         for r in ref:
             if r.get("Key") in ("EAN", "RefId"):
@@ -88,18 +137,17 @@ def formatear_producto(item: dict, tienda: str, base_url: str) -> dict | None:
     precio = extraer_precio(item)
     if precio is None:
         return None
-
     list_price = extraer_list_price(item)
     link = item.get("linkText", "")
     return {
-        "tienda":      tienda,
-        "nombre":      item.get("productName", "Sin nombre"),
-        "marca":       item.get("brand", ""),
-        "precio":      precio,
+        "tienda":       tienda,
+        "nombre":       item.get("productName", "Sin nombre"),
+        "marca":        item.get("brand", ""),
+        "precio":       precio,
         "precio_antes": list_price if list_price and list_price > precio else None,
-        "url":         f"{base_url}/{link}/p",
-        "imagen":      extraer_imagen(item),
-        "ean":         extraer_ean(item),
+        "url":          f"{base_url}/{link}/p",
+        "imagen":       extraer_imagen(item),
+        "ean":          extraer_ean(item),
     }
 
 
@@ -107,10 +155,8 @@ def _marcar_y_ordenar(todos: list[dict]) -> tuple[list[dict], set]:
     eans_walmart = {p["ean"] for p in todos if p["tienda"] == "Walmart GT" and p["ean"]}
     eans_torre   = {p["ean"] for p in todos if p["tienda"] == "La Torre"   and p["ean"]}
     eans_comunes = eans_walmart & eans_torre
-
     for p in todos:
         p["coincide_ambas"] = p["ean"] in eans_comunes if p["ean"] else False
-
     todos.sort(key=lambda x: (not x["coincide_ambas"], x["precio"]))
     return todos, eans_comunes
 
@@ -128,19 +174,14 @@ async def buscar_en_tienda(
     try:
         resp = await client.get(url, headers=HEADERS, timeout=12)
         print(f"[{tienda}] Status: {resp.status_code}")
-
         if resp.status_code not in (200, 206):
-            print(f"[{tienda}] Status inesperado: {resp.status_code}")
             return []
-
         productos = resp.json()
-        print(f"[{tienda}] Productos recibidos: {len(productos)}")
         resultados = []
         for item in productos:
             p = formatear_producto(item, tienda, base_url)
             if p:
                 resultados.append(p)
-        print(f"[{tienda}] Productos con precio: {len(resultados)}")
         return resultados
     except Exception as e:
         print(f"[{tienda}] Error: {e}")
@@ -153,25 +194,15 @@ async def buscar_en_tienda_por_ean(
     base_url: str,
     ean: str,
 ) -> list[dict]:
-    # Normalizar EAN: quitar ceros a la izquierda para comparar
-    ean_norm = ean.lstrip('0')
-
-    # VTEX endpoint específico para buscar por EAN
     url = (
         f"{base_url}/api/catalog_system/pub/products/search"
         f"?fq=alternateIds_Ean:{ean}&_from=0&_to=5"
     )
     try:
         resp = await client.get(url, headers=HEADERS, timeout=12)
-        print(f"[{tienda}] EAN Status: {resp.status_code}")
-
         if resp.status_code not in (200, 206):
             return []
-
         productos = resp.json()
-        print(f"[{tienda}] EAN Productos recibidos: {len(productos)}")
-
-        # Si no encuentra con el EAN original, intentar con ceros adicionales
         if not productos and not ean.startswith('0'):
             url2 = (
                 f"{base_url}/api/catalog_system/pub/products/search"
@@ -180,8 +211,6 @@ async def buscar_en_tienda_por_ean(
             resp2 = await client.get(url2, headers=HEADERS, timeout=12)
             if resp2.status_code in (200, 206):
                 productos = resp2.json()
-                print(f"[{tienda}] EAN con 0 Productos: {len(productos)}")
-
         resultados = []
         for item in productos:
             p = formatear_producto(item, tienda, base_url)
@@ -202,10 +231,9 @@ def root():
 def health():
     return {"status": "ok"}
 
+
 @app.get("/buscar")
-async def buscar(
-    q: str = Query(..., min_length=1, description="Producto a buscar")
-):
+async def buscar(q: str = Query(..., min_length=1)):
     async with httpx.AsyncClient() as client:
         tareas = [
             buscar_en_tienda(client, tienda, base_url, q)
@@ -215,6 +243,8 @@ async def buscar(
 
     todos = [p for lista in resultados_por_tienda for p in lista]
     todos, eans_comunes = _marcar_y_ordenar(todos)
+
+    asyncio.create_task(guardar_historial(todos))
 
     walmart = [p for p in todos if p["tienda"] == "Walmart GT"]
     torre   = [p for p in todos if p["tienda"] == "La Torre"]
@@ -230,9 +260,7 @@ async def buscar(
 
 
 @app.get("/buscar-ean")
-async def buscar_por_ean(
-    ean: str = Query(..., min_length=1, description="EAN a buscar")
-):
+async def buscar_por_ean(ean: str = Query(..., min_length=1)):
     async with httpx.AsyncClient() as client:
         tareas = [
             buscar_en_tienda_por_ean(client, tienda, base_url, ean)
@@ -242,9 +270,7 @@ async def buscar_por_ean(
 
     todos = [p for lista in resultados_por_tienda for p in lista]
 
-    # Si no encontró nada por EAN exacto, hacer búsqueda por texto como fallback
     if not todos:
-        print(f"[EAN] Sin resultados para {ean}, usando búsqueda por texto")
         async with httpx.AsyncClient() as client:
             tareas = [
                 buscar_en_tienda(client, tienda, base_url, ean)
@@ -254,6 +280,8 @@ async def buscar_por_ean(
         todos = [p for lista in resultados_por_tienda for p in lista]
 
     todos, eans_comunes = _marcar_y_ordenar(todos)
+
+    asyncio.create_task(guardar_historial(todos))
 
     walmart = [p for p in todos if p["tienda"] == "Walmart GT"]
     torre   = [p for p in todos if p["tienda"] == "La Torre"]
@@ -266,3 +294,26 @@ async def buscar_por_ean(
         "coincidencias": len(eans_comunes),
         "resultados":    todos,
     }
+
+
+@app.get("/historial/{ean}")
+async def historial_ean(ean: str):
+    if supabase_client is None:
+        return {"ean": ean, "registros": []}
+
+    def _consultar():
+        return (
+            supabase_client.table("historial_precios")
+            .select("tienda, precio, fecha")
+            .eq("ean", ean)
+            .order("fecha", desc=False)
+            .limit(200)
+            .execute()
+        )
+
+    try:
+        resp = await asyncio.to_thread(_consultar)
+        return {"ean": ean, "registros": resp.data or []}
+    except Exception as e:
+        print(f"[Supabase] Error consultando historial: {e}")
+        return {"ean": ean, "registros": []}
