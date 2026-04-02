@@ -8,20 +8,17 @@ y el proyecto sigue [Versionamiento Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
-### Fixed
-
-
-### Added
-- Endpoint `/health` para monitoreo con UptimeRobot
-- Configurar UptimeRobot para evitar sleep del servidor en Render
-
-[Unreleased]: https://github.com/sdomccxxv/comparador-precios-gt/compare/v1.1.0...HEAD
 
 ---
 ## [1.1.1] - 2026-04-01
 
+### Added
+- Endpoint `/health` con soporte GET y HEAD para monitoreo externo
+- Configurar UptimeRobot para evitar sleep del servidor en Render
+
 ### Fixed
 - Escaneo de EAN ahora navega correctamente a la pantalla de resultados
+- Método HEAD no permitido en `/health` causaba falsa alarma en UptimeRobot
 
 [1.1.1]: https://github.com/sdomccxxv/comparador-precios-gt/compare/v1.1.0...v1.1.1
 
