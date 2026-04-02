@@ -16,16 +16,24 @@ class _ScannerScreenState extends State<ScannerScreen> {
   bool _linterna = false;
 
   Future<void> _onDetected(BarcodeCapture capture) async {
+
+    print('🔍 onDetect llamado - barcodes: ${capture.barcodes.length}');
+
     if (_procesando) return;
     final barcode = capture.barcodes.firstOrNull;
+
+    print('📦 Barcode rawValue: ${barcode?.rawValue}');
+
     if (barcode?.rawValue == null) return;
 
     final ean = barcode!.rawValue!;
+    print('✅ EAN detectado: $ean');
+
     setState(() => _procesando = true);
     _controller.stop();
 
     try {
-      final productos = await ApiService.buscarProductos(ean);
+      final productos = await ApiService.buscarPorEan(ean);
       if (!mounted) return;
 
       if (productos.isEmpty) {
