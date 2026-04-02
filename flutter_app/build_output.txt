@@ -1,0 +1,2 @@
+Flutter failed to delete a directory at "C:\Users\SAMUE\OneDrive\Documentos\Progra\Flutter\comparador-precios-gt\flutter_app\windows\flutter\ephemeral\.plugin_symlinks". The flutter tool cannot access the file or directory.
+Please ensure that the SDK and/or project is installed in a location that has read/write permissions for the current user.

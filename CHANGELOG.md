@@ -9,7 +9,7 @@ y el proyecto sigue [Versionamiento Semántico](https://semver.org/lang/es/).
 ## [Unreleased]
 
 ### Fixed
-- Resolver bug de producto no encontrado al escanear EAN
+
 
 ### Added
 - Endpoint `/health` para monitoreo con UptimeRobot
@@ -18,6 +18,12 @@ y el proyecto sigue [Versionamiento Semántico](https://semver.org/lang/es/).
 [Unreleased]: https://github.com/sdomccxxv/comparador-precios-gt/compare/v1.1.0...HEAD
 
 ---
+## [1.1.1] - 2026-04-01
+
+### Fixed
+- Escaneo de EAN ahora navega correctamente a la pantalla de resultados
+
+[1.1.1]: https://github.com/sdomccxxv/comparador-precios-gt/compare/v1.1.0...v1.1.1
 
 ## [1.1.0] - 2026-04-01
 

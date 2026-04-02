@@ -20,7 +20,7 @@
 - [x] Escaneo de código de barras con `mobile_scanner`
 - [x] Búsqueda por EAN con endpoint `/buscar-ean` en el backend
 - [x] Mostrar precio anterior tachado cuando hay oferta activa
-- [ ] Resolver bug de producto no encontrado al escanear EAN
+- [x] Resolver bug de producto no encontrado al escanear EAN
 - [ ] Endpoint `/health` para monitoreo con UptimeRobot
 - [ ] Configurar UptimeRobot para evitar sleep del servidor en Render
 
