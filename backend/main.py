@@ -49,7 +49,7 @@ async def guardar_historial(productos: list[dict]) -> None:
         return
 
     def _sync():
-        hace_6h = (datetime.now(timezone.utc) - timedelta(hours=6)).isoformat()
+        hace_24h = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
         for p in con_ean:
             try:
                 existe = (
@@ -57,7 +57,7 @@ async def guardar_historial(productos: list[dict]) -> None:
                     .select("id")
                     .eq("ean", p["ean"])
                     .eq("tienda", p["tienda"])
-                    .gte("fecha", hace_6h)
+                    .gte("fecha", hace_24h)
                     .limit(1)
                     .execute()
                 )
