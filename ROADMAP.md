@@ -21,8 +21,8 @@
 - [x] Búsqueda por EAN con endpoint `/buscar-ean` en el backend
 - [x] Mostrar precio anterior tachado cuando hay oferta activa
 - [x] Resolver bug de producto no encontrado al escanear EAN
-- [ ] Endpoint `/health` para monitoreo con UptimeRobot
-- [ ] Configurar UptimeRobot para evitar sleep del servidor en Render
+- [x] Endpoint `/health` para monitoreo con UptimeRobot
+- [x] Configurar UptimeRobot para evitar sleep del servidor en Render
 
 ---
 
