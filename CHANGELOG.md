@@ -8,6 +8,28 @@ y el proyecto sigue [Versionamiento Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+---
+## [1.2.0] - 2026-04-01
+
+### Added
+- Integración con Supabase para persistencia de historial de precios
+- Tabla `historial_precios` en PostgreSQL con campos: ean, tienda, nombre, marca, precio, fecha
+- Endpoint `GET /historial/{ean}` en el backend para consultar evolución de precios por EAN
+- Guardado automático de precios en cada búsqueda con deduplicación de 24 horas por producto/tienda
+- Modelo `HistorialPrecio` en Flutter con campos: ean, tienda, precio, fecha
+- Método `ApiService.obtenerHistorial(ean)` para consumir el nuevo endpoint
+- Gráfica de evolución de precios en `DetailScreen` usando `fl_chart`
+- Dos líneas en la gráfica: Walmart GT (azul) y La Torre (naranja), con tooltip al tocar
+- Estado de carga con spinner y mensaje cuando no hay suficiente historial aún
+- Contenedor visual `_ChartContainer` reutilizable para la gráfica
+
+### Changed
+- `DetailScreen` migrado de `StatelessWidget` a `StatefulWidget` para soportar carga asíncrona del historial
+- Texto "Precio" cambiado a "Precio actual" en la tarjeta de detalle
+- Colores de tiendas actualizados: Walmart GT `#1A75CF`, La Torre `#F36A10`
+- `requirements.txt` actualizado con dependencia `supabase`
+
+[1.2.0]: https://github.com/sdomccxxv/comparador-precios-gt/compare/v1.1.1...v1.2.0
 
 ---
 ## [1.1.1] - 2026-04-01
