@@ -198,10 +198,9 @@ def root():
     return {"mensaje": "Comparador de Precios GT funcionando ✅"}
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health():
     return {"status": "ok"}
-
 
 @app.get("/buscar")
 async def buscar(
