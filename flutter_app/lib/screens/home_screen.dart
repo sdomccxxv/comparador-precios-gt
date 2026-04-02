@@ -81,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   _TiendaBadge(
                     nombre: 'Walmart GT',
-                    color: const Color(0xFF0071CE),
+                    color: const Color(0xFF1A75CF),
                     icono: Icons.store,
                   ),
                   const SizedBox(width: 12),
@@ -95,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(width: 12),
                   _TiendaBadge(
                     nombre: 'La Torre',
-                    color: const Color(0xFFE53935),
+                    color: const Color(0xFFF36A10),
                     icono: Icons.storefront,
                   ),
                 ],

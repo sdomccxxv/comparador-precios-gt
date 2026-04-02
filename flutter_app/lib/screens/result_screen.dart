@@ -30,35 +30,33 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
   String _eanKey(Producto p) => (p.ean ?? '').trim();
 
-List<Producto> get _productosAgrupados {
-  final filtrados = _productosFiltrados;
+  List<Producto> get _productosAgrupados {
+    final filtrados = _productosFiltrados;
 
-  // Separar coincidentes, con EAN sin coincidencia, y sin EAN
-  final coincidentes = filtrados.where((p) => p.coincideAmbas).toList();
-  final conEanSinCoincidir = filtrados
-      .where((p) => !p.coincideAmbas && (p.ean ?? '').isNotEmpty)
-      .toList();
-  final sinEan = filtrados
-      .where((p) => (p.ean ?? '').isEmpty)
-      .toList();
+    // Separar coincidentes, con EAN sin coincidencia, y sin EAN
+    final coincidentes = filtrados.where((p) => p.coincideAmbas).toList();
+    final conEanSinCoincidir = filtrados
+        .where((p) => !p.coincideAmbas && (p.ean ?? '').isNotEmpty)
+        .toList();
+    final sinEan = filtrados.where((p) => (p.ean ?? '').isEmpty).toList();
 
-  // Ordenar cada grupo por EAN y luego precio
-  coincidentes.sort((a, b) {
-    final eanCompare = _eanKey(a).compareTo(_eanKey(b));
-    if (eanCompare != 0) return eanCompare;
-    return a.precio.compareTo(b.precio);
-  });
+    // Ordenar cada grupo por EAN y luego precio
+    coincidentes.sort((a, b) {
+      final eanCompare = _eanKey(a).compareTo(_eanKey(b));
+      if (eanCompare != 0) return eanCompare;
+      return a.precio.compareTo(b.precio);
+    });
 
-  conEanSinCoincidir.sort((a, b) {
-    final eanCompare = _eanKey(a).compareTo(_eanKey(b));
-    if (eanCompare != 0) return eanCompare;
-    return a.precio.compareTo(b.precio);
-  });
+    conEanSinCoincidir.sort((a, b) {
+      final eanCompare = _eanKey(a).compareTo(_eanKey(b));
+      if (eanCompare != 0) return eanCompare;
+      return a.precio.compareTo(b.precio);
+    });
 
-  sinEan.sort((a, b) => a.precio.compareTo(b.precio));
+    sinEan.sort((a, b) => a.precio.compareTo(b.precio));
 
-  return [...coincidentes, ...conEanSinCoincidir, ...sinEan];
-}
+    return [...coincidentes, ...conEanSinCoincidir, ...sinEan];
+  }
 
   bool _esInicioGrupoEan(List<Producto> lista, int index) {
     final actual = _eanKey(lista[index]);
@@ -68,16 +66,16 @@ List<Producto> get _productosAgrupados {
   }
 
   Map<String, double> get _precioMinimoPorEan {
-  final Map<String, double> minimos = {};
-  for (final p in _productosAgrupados) {
-    final ean = _eanKey(p);
-    if (ean.isEmpty) continue;
-    if (!minimos.containsKey(ean) || p.precio < minimos[ean]!) {
-      minimos[ean] = p.precio;
+    final Map<String, double> minimos = {};
+    for (final p in _productosAgrupados) {
+      final ean = _eanKey(p);
+      if (ean.isEmpty) continue;
+      if (!minimos.containsKey(ean) || p.precio < minimos[ean]!) {
+        minimos[ean] = p.precio;
+      }
     }
+    return minimos;
   }
-  return minimos;
-}
 
   int get _countWalmart => widget.productos.where((p) => p.esWalmart).length;
   int get _countTorre => widget.productos.where((p) => !p.esWalmart).length;
@@ -118,7 +116,7 @@ List<Producto> get _productosAgrupados {
                 _ResumenChip(
                   label: 'Walmart',
                   count: _countWalmart,
-                  color: const Color(0xFF0071CE),
+                  color: const Color(0xFF1A75CF),
                   seleccionado: _filtro == 'Walmart GT',
                   onTap: () => setState(() => _filtro = 'Walmart GT'),
                 ),
@@ -126,7 +124,7 @@ List<Producto> get _productosAgrupados {
                 _ResumenChip(
                   label: 'La Torre',
                   count: _countTorre,
-                  color: const Color(0xFFE53935),
+                  color: const Color(0xFFF36A10),
                   seleccionado: _filtro == 'La Torre',
                   onTap: () => setState(() => _filtro = 'La Torre'),
                 ),
@@ -152,7 +150,8 @@ List<Producto> get _productosAgrupados {
                       final minimos = _precioMinimoPorEan;
 
                       // Es más barato solo si tiene EAN y es el mínimo de su grupo
-                      final esMasBarato = ean.isNotEmpty &&
+                      final esMasBarato =
+                          ean.isNotEmpty &&
                           minimos.containsKey(ean) &&
                           producto.precio == minimos[ean];
 
@@ -164,15 +163,15 @@ List<Producto> get _productosAgrupados {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (mostrarSeparador)
-                            _SeparadorGrupoEan(ean: ean),
+                          if (mostrarSeparador) _SeparadorGrupoEan(ean: ean),
                           _ProductoCard(
                             producto: producto,
                             esMasBarato: esMasBarato,
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => DetailScreen(producto: producto),
+                                builder: (_) =>
+                                    DetailScreen(producto: producto),
                               ),
                             ),
                           ),
@@ -241,7 +240,7 @@ class _ProductoCard extends StatelessWidget {
   });
 
   Color get _colorTienda =>
-      producto.esWalmart ? const Color(0xFF0071CE) : const Color(0xFFE53935);
+      producto.esWalmart ? const Color(0xFF1A75CF) : const Color(0xFFF36A10);
 
   @override
   Widget build(BuildContext context) {
@@ -253,10 +252,10 @@ class _ProductoCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: esMasBarato
-            ? Border.all(color: Colors.green.shade400, width: 2)
-            : producto.tieneOferta
-                ? Border.all(color: Colors.green.shade300, width: 1.5)
-                : Border.all(color: Colors.grey.shade100),
+              ? Border.all(color: Colors.green.shade400, width: 2)
+              : producto.tieneOferta
+              ? Border.all(color: Colors.green.shade300, width: 1.5)
+              : Border.all(color: Colors.grey.shade100),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
