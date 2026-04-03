@@ -8,6 +8,24 @@ y el proyecto sigue [Versionamiento Semántico](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+- Sin cambios pendientes.
+
+---
+## [1.4.0] - 2026-04-02
+
+### Added
+- Integración de nuevas tiendas en backend y frontend: Paiz y Maxi Despensa
+- Cobertura de pruebas unitarias en backend con `pytest` para lógica de extracción y coincidencias por EAN
+- Pruebas unitarias Flutter para `ApiService` (búsqueda, fallback por EAN e historial)
+- Pruebas unitarias Flutter para el modelo `Producto` (mapeo y colores por tienda)
+
+### Changed
+- Respuesta del backend en búsquedas ahora incluye `counts` por tienda para manejar múltiples tiendas
+- Colores de tienda del modelo `Producto` actualizados para Paiz y Maxi Despensa
+- `requirements.txt` del backend actualizado para incluir `pytest`
+
+[1.4.0]: https://github.com/sdomccxxv/comparador-precios-gt/compare/v1.3.0...v1.4.0
+
 ---
 ## [1.3.0] - 2026-04-03
 

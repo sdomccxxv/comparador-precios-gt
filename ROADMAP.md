@@ -1,8 +1,8 @@
 # Roadmap — Comparador de Precios GT
 
-## Estado actual — v1.2 ✅
+## Estado actual — v1.4 ✅
 
-- Búsqueda de productos por texto en Walmart GT y La Torre
+- Búsqueda de productos por texto en Walmart GT, La Torre, Paiz y Maxi Despensa
 - Comparación de precios en tiempo real vía API VTEX
 - Agrupación y coincidencia de productos por EAN
 - Badge de producto más barato por par EAN coincidente
@@ -45,7 +45,7 @@
 
 - [ ] **Lista del super** — crear una lista de compras, elegir en qué tienda comprar cada producto y calcular el total automáticamente
 - [ ] **Alertas de precio** — el servidor revisa periódicamente si un producto bajó de precio y envía una notificación push al celular
-- [ ] **Más tiendas** — agregar Paiz y Maxi Despensa (ambos usan VTEX, integración directa posible)
+- [x] **Más tiendas** — agregar Paiz y Maxi Despensa (ambos usan VTEX, integración directa posible)
 - [ ] **Ordenamiento en resultados** — permitir ordenar por precio, por tienda o por coincidencia EAN
 - [ ] **Modo sin conexión** — cachear los últimos resultados para consultarlos sin internet
 - [ ] **Tendencia de precio** — indicador visual (↑↓) que muestra si el precio subió o bajó respecto al registro anterior
@@ -64,8 +64,8 @@
 
 - [ ] Migrar de Render Free a plan pagado o Azure B1 cuando el tráfico lo justifique
 - [ ] Agregar caché en el backend (Redis o in-memory) para reducir llamadas repetidas a la API VTEX
-- [ ] Agregar tests automatizados al backend con `pytest`
-- [ ] Tests unitarios Flutter para `ApiService` y modelos
+- [x] Agregar tests automatizados al backend con `pytest`
+- [x] Tests unitarios Flutter para `ApiService` y modelos
 - [ ] CI/CD con GitHub Actions para deploy automático al hacer push a `main`
 - [ ] Renombrar la app de `com.example.flutter_app` a un bundle ID definitivo antes de publicar
 - [ ] Limpieza automática de registros de historial mayores a 1 año (pg_cron)
