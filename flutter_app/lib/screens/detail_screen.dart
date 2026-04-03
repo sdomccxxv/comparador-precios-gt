@@ -23,9 +23,7 @@ class _DetailScreenState extends State<DetailScreen> {
   bool _cargandoHistorial = true;
 
   // Color de la tienda: azul para Walmart, rojo para La Torre
-  Color get _colorTienda => widget.producto.esWalmart
-      ? const Color(0xFF1A75CF)
-      : const Color(0xFFF36A10);
+  Color get _colorTienda => widget.producto.colorTienda;
 
   @override
   void initState() {
@@ -261,7 +259,7 @@ class _HistorialChart extends StatelessWidget {
 
   // Colores fijos por tienda
   static const _colorWalmart = Color(0xFF1A75CF);
-  static const _colorTorre   = Color(0xFFF36A10);
+  static const _colorTorre = Color(0xFFF36A10);
 
   const _HistorialChart({required this.historial, required this.cargando});
 

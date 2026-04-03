@@ -1,9 +1,11 @@
+import 'package:flutter/material.dart';
+
 class Producto {
   final String tienda;
   final String nombre;
   final String marca;
   final double precio;
-  final double? precioAntes; 
+  final double? precioAntes;
   final String url;
   final String? imagen;
   final String? ean;
@@ -27,9 +29,9 @@ class Producto {
       nombre: json['nombre'] ?? '',
       marca: json['marca'] ?? '',
       precio: (json['precio'] as num).toDouble(),
-      precioAntes:  json['precio_antes'] != null
-                      ? (json['precio_antes'] as num).toDouble()
-                      : null, 
+      precioAntes: json['precio_antes'] != null
+          ? (json['precio_antes'] as num).toDouble()
+          : null,
       url: json['url'] ?? '',
       imagen: json['imagen'],
       ean: json['ean']?.toString(),
@@ -37,7 +39,21 @@ class Producto {
     );
   }
 
-  // Color por tienda para mostrar en la UI
-  bool get esWalmart => tienda == 'Walmart GT';
+  // Color representativo por tienda
+  Color get colorTienda {
+    switch (tienda) {
+      case 'Walmart GT':
+        return const Color(0xFF1A75CF);
+      case 'La Torre':
+        return const Color(0xFFF36A10);
+      case 'Paiz':
+        return const Color(0xFFFF7300);
+      case 'Maxi Despensa':
+        return const Color(0xFF3FA527);
+      default:
+        return const Color(0xFF607D8B);
+    }
+  }
+
   bool get tieneOferta => precioAntes != null && precioAntes! > precio;
 }
