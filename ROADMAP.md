@@ -29,17 +29,15 @@
 
 ---
 
-## v1.2 — Historial de precios ✅
+## v1.2 — Experiencia de usuario ✅
 
 - [x] **Historial de precios** — guardar precio + fecha en Supabase cada vez que se consulta un EAN
 - [x] **Gráfica de evolución** — visualizar precio histórico con fl_chart en la pantalla de detalle
 - [x] **Deduplicación diaria** — evitar registros duplicados del mismo EAN+tienda por día
 - [x] **Cron job diario** — Edge Function en Supabase que actualiza el historial automáticamente cada día
-- [ ] **Historial de búsquedas** — guardar las últimas búsquedas en el dispositivo para repetirlas rápido desde la pantalla principal
-- [ ] **Favoritos** — permitir guardar productos de interés y consultarlos sin necesidad de buscarlos de nuevo
-- [ ] **Compartir comparación** — botón para compartir la comparación de precios de un producto por WhatsApp mostrando precio en cada tienda
-- [ ] **Skeleton loading** — mostrar placeholders animados mientras carga la búsqueda en lugar del spinner actual
-- [ ] **Búsqueda reciente en home** — chips con las últimas búsquedas debajo del campo de texto
+- [x] **Skeleton loading** — placeholders animados mientras carga la búsqueda
+- [x] **Historial de búsquedas** — chips con las últimas búsquedas debajo del campo de texto
+- [x] **Mejoras visuales** — color de tienda en fondo de tarjetas, separador sin EAN visible
 
 ---
 

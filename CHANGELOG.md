@@ -9,6 +9,23 @@ y el proyecto sigue [Versionamiento Semántico](https://semver.org/lang/es/).
 ## [Unreleased]
 
 ---
+## [1.3.0] - 2026-04-03
+
+### Added
+- Skeleton loading en pantalla de resultados con animación de pulso
+- Historial de búsquedas recientes en pantalla principal con `shared_preferences`
+- Chips de búsquedas recientes con opción de eliminar individual o limpiar todo
+- Color de tienda con transparencia en fondo de tarjetas de producto
+
+### Changed
+- `ResultsScreen` ahora carga sus propios datos internamente — navegación inmediata desde `HomeScreen`
+- `HomeScreen` ya no bloquea la UI mientras espera resultados del backend
+- Separador de grupo EAN simplificado — ya no muestra el número de EAN
+- Badge "EAN coincidente" eliminado de las tarjetas de producto
+
+[1.3.0]: https://github.com/sdomccxxv/comparador-precios-gt/compare/v1.2.0...v1.3.0
+
+---
 ## [1.2.0] - 2026-04-01
 
 ### Added
