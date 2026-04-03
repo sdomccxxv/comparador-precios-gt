@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
 import 'result_screen.dart';
 import 'scanner_screen.dart';
 
@@ -12,32 +11,15 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _controller = TextEditingController();
-  bool _cargando = false;
-  String? _error;
 
-  Future<void> _buscar() async {
+  void _buscar() {
     final query = _controller.text.trim();
     if (query.isEmpty) return;
-
-    setState(() {
-      _cargando = true;
-      _error = null;
-    });
-
-    try {
-      final productos = await ApiService.buscarProductos(query);
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ResultsScreen(query: query, productos: productos),
-        ),
-      );
-    } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      setState(() => _cargando = false);
-    }
+    // Navegar inmediatamente — ResultsScreen carga los datos y muestra skeleton
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ResultsScreen(query: query)),
+    );
   }
 
   @override
@@ -51,7 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const SizedBox(height: 60),
 
-              // Logo / título
               const Icon(
                 Icons.shopping_cart_rounded,
                 size: 64,
@@ -75,7 +56,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 48),
 
-              // Logos de tiendas
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -103,7 +83,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 48),
 
-              // Campo de búsqueda
               TextField(
                 controller: _controller,
                 onSubmitted: (_) => _buscar(),
@@ -133,12 +112,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 16),
 
-              // Botón buscar
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _cargando ? null : _buscar,
+                  onPressed: _buscar,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1976D2),
                     foregroundColor: Colors.white,
@@ -147,26 +125,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: _cargando
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : const Text(
-                          'Buscar y comparar',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                  child: const Text(
+                    'Buscar y comparar',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
 
-              // Después del botón "Buscar y comparar"
               const SizedBox(height: 12),
 
               SizedBox(
@@ -184,45 +149,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF1976D2),
-                    side: const BorderSide(color: Color(0xFF1976D2), width: 1.5),
+                    side: const BorderSide(
+                      color: Color(0xFF1976D2),
+                      width: 1.5,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                 ),
               ),
-
-              // Error
-              if (_error != null) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: Colors.red.shade700,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'No se pudo conectar al servidor. ¿Está corriendo el backend?',
-                          style: TextStyle(
-                            color: Colors.red.shade700,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
 
               const Spacer(),
               const Text(
