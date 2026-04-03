@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import '../models/producto.dart';
+import '../services/api_service.dart';
+import '../widgets/skeleton_card.dart';
 import 'detail_screen.dart';
 
 class ResultsScreen extends StatefulWidget {
   final String query;
-  final List<Producto> productos;
+  // productos es opcional: si es null, la pantalla los carga internamente
+  final List<Producto>? productos;
+  // esEan indica si query es un código EAN (viene del scanner)
+  final bool esEan;
 
   const ResultsScreen({
     super.key,
     required this.query,
-    required this.productos,
+    this.productos,
+    this.esEan = false,
   });
 
   @override
@@ -18,14 +24,48 @@ class ResultsScreen extends StatefulWidget {
 
 class _ResultsScreenState extends State<ResultsScreen> {
   String _filtro = 'Todos';
+  List<Producto> _productos = [];
+  bool _cargando = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.productos != null) {
+      // Si ya vienen productos del scanner, usarlos directamente
+      _productos = widget.productos!;
+    } else {
+      // Cargar desde el backend y mostrar skeleton mientras tanto
+      _cargarProductos();
+    }
+  }
+
+  Future<void> _cargarProductos() async {
+    setState(() {
+      _cargando = true;
+      _error = null;
+    });
+    try {
+      final resultado = widget.esEan
+          ? await ApiService.buscarPorEan(widget.query)
+          : await ApiService.buscarProductos(widget.query);
+      if (!mounted) return;
+      setState(() => _productos = resultado);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
+  }
 
   List<Producto> get _productosFiltrados {
     if (_filtro == 'Walmart GT') {
-      return widget.productos.where((p) => p.esWalmart).toList();
+      return _productos.where((p) => p.esWalmart).toList();
     } else if (_filtro == 'La Torre') {
-      return widget.productos.where((p) => !p.esWalmart).toList();
+      return _productos.where((p) => !p.esWalmart).toList();
     }
-    return widget.productos;
+    return _productos;
   }
 
   String _eanKey(Producto p) => (p.ean ?? '').trim();
@@ -33,14 +73,12 @@ class _ResultsScreenState extends State<ResultsScreen> {
   List<Producto> get _productosAgrupados {
     final filtrados = _productosFiltrados;
 
-    // Separar coincidentes, con EAN sin coincidencia, y sin EAN
     final coincidentes = filtrados.where((p) => p.coincideAmbas).toList();
     final conEanSinCoincidir = filtrados
         .where((p) => !p.coincideAmbas && (p.ean ?? '').isNotEmpty)
         .toList();
     final sinEan = filtrados.where((p) => (p.ean ?? '').isEmpty).toList();
 
-    // Ordenar cada grupo por EAN y luego precio
     coincidentes.sort((a, b) {
       final eanCompare = _eanKey(a).compareTo(_eanKey(b));
       if (eanCompare != 0) return eanCompare;
@@ -77,8 +115,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
     return minimos;
   }
 
-  int get _countWalmart => widget.productos.where((p) => p.esWalmart).length;
-  int get _countTorre => widget.productos.where((p) => !p.esWalmart).length;
+  int get _countWalmart => _productos.where((p) => p.esWalmart).length;
+  int get _countTorre => _productos.where((p) => !p.esWalmart).length;
 
   @override
   Widget build(BuildContext context) {
@@ -99,42 +137,74 @@ class _ResultsScreenState extends State<ResultsScreen> {
       ),
       body: Column(
         children: [
-          // Resumen de resultados
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                _ResumenChip(
-                  label: 'Todos',
-                  count: widget.productos.length,
-                  color: Colors.grey,
-                  seleccionado: _filtro == 'Todos',
-                  onTap: () => setState(() => _filtro = 'Todos'),
-                ),
-                const SizedBox(width: 8),
-                _ResumenChip(
-                  label: 'Walmart',
-                  count: _countWalmart,
-                  color: const Color(0xFF1A75CF),
-                  seleccionado: _filtro == 'Walmart GT',
-                  onTap: () => setState(() => _filtro = 'Walmart GT'),
-                ),
-                const SizedBox(width: 8),
-                _ResumenChip(
-                  label: 'La Torre',
-                  count: _countTorre,
-                  color: const Color(0xFFF36A10),
-                  seleccionado: _filtro == 'La Torre',
-                  onTap: () => setState(() => _filtro = 'La Torre'),
-                ),
-              ],
+          // Resumen de resultados — oculto mientras carga
+          if (!_cargando)
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  _ResumenChip(
+                    label: 'Todos',
+                    count: _productos.length,
+                    color: Colors.grey,
+                    seleccionado: _filtro == 'Todos',
+                    onTap: () => setState(() => _filtro = 'Todos'),
+                  ),
+                  const SizedBox(width: 8),
+                  _ResumenChip(
+                    label: 'Walmart',
+                    count: _countWalmart,
+                    color: const Color(0xFF1A75CF),
+                    seleccionado: _filtro == 'Walmart GT',
+                    onTap: () => setState(() => _filtro = 'Walmart GT'),
+                  ),
+                  const SizedBox(width: 8),
+                  _ResumenChip(
+                    label: 'La Torre',
+                    count: _countTorre,
+                    color: const Color(0xFFF36A10),
+                    seleccionado: _filtro == 'La Torre',
+                    onTap: () => setState(() => _filtro = 'La Torre'),
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          // Lista de productos
+          // Contenido principal
           Expanded(
-            child: _productosAgrupados.isEmpty
+            child: _cargando
+                // Mostrar skeleton mientras se cargan los datos
+                ? const SkeletonList()
+                : _error != null
+                // Mostrar error si falló la carga
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.wifi_off,
+                            size: 48,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No se pudo conectar al servidor',
+                            style: TextStyle(fontSize: 15, color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _cargarProductos,
+                            child: const Text('Reintentar'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : _productosAgrupados.isEmpty
                 ? const Center(
                     child: Text(
                       'No hay resultados',
@@ -149,7 +219,6 @@ class _ResultsScreenState extends State<ResultsScreen> {
                       final ean = _eanKey(producto);
                       final minimos = _precioMinimoPorEan;
 
-                      // Es más barato solo si tiene EAN y es el mínimo de su grupo
                       final esMasBarato =
                           ean.isNotEmpty &&
                           minimos.containsKey(ean) &&
@@ -249,7 +318,7 @@ class _ProductoCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: _colorTienda.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
           border: esMasBarato
               ? Border.all(color: Colors.green.shade400, width: 2)
@@ -268,7 +337,6 @@ class _ProductoCard extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              // Imagen del producto
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: producto.imagen != null
@@ -283,13 +351,10 @@ class _ProductoCard extends StatelessWidget {
                     : _PlaceholderImagen(color: _colorTienda),
               ),
               const SizedBox(width: 12),
-
-              // Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Badge tienda + más barato
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
@@ -312,7 +377,7 @@ class _ProductoCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (producto.coincideAmbas) ...[
+                        /*if (producto.coincideAmbas) ...[
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
@@ -331,7 +396,7 @@ class _ProductoCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                        ],
+                        ],*/
                         if (esMasBarato) ...[
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -387,8 +452,6 @@ class _ProductoCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-
-              // Precio
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -459,22 +522,7 @@ class _SeparadorGrupoEan extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, top: 4),
-      child: Row(
-        children: [
-          Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1)),
-          const SizedBox(width: 8),
-          Text(
-            'EAN: $ean',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: Colors.grey.shade700,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1)),
-        ],
-      ),
+      child: Divider(color: Colors.grey.shade300, thickness: 1),
     );
   }
 }
