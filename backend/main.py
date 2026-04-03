@@ -26,8 +26,10 @@ HEADERS = {
 }
 
 TIENDAS = {
-    "Walmart GT": "https://www.walmart.com.gt",
-    "La Torre":   "https://www.latorre.com.gt",
+    "Walmart GT":    "https://www.walmart.com.gt",
+    "La Torre":      "https://www.latorre.com.gt",
+    "Paiz":          "https://www.paiz.com.gt",
+    "Maxi Despensa": "https://www.maxidespensa.com.gt",
 }
 
 _SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
@@ -152,9 +154,15 @@ def formatear_producto(item: dict, tienda: str, base_url: str) -> dict | None:
 
 
 def _marcar_y_ordenar(todos: list[dict]) -> tuple[list[dict], set]:
-    eans_walmart = {p["ean"] for p in todos if p["tienda"] == "Walmart GT" and p["ean"]}
-    eans_torre   = {p["ean"] for p in todos if p["tienda"] == "La Torre"   and p["ean"]}
-    eans_comunes = eans_walmart & eans_torre
+    # Mapear cada EAN a las tiendas donde aparece
+    ean_a_tiendas: dict[str, set] = {}
+    for p in todos:
+        if p.get("ean"):
+            ean_a_tiendas.setdefault(p["ean"], set()).add(p["tienda"])
+
+    # EANs presentes en 2 o más tiendas distintas
+    eans_comunes = {ean for ean, tiendas in ean_a_tiendas.items() if len(tiendas) >= 2}
+
     for p in todos:
         p["coincide_ambas"] = p["ean"] in eans_comunes if p["ean"] else False
     todos.sort(key=lambda x: (not x["coincide_ambas"], x["precio"]))
@@ -246,19 +254,16 @@ async def buscar(q: str = Query(..., min_length=1)):
 
     asyncio.create_task(guardar_historial(todos))
 
-    walmart = [p for p in todos if p["tienda"] == "Walmart GT"]
-    torre   = [p for p in todos if p["tienda"] == "La Torre"]
+    counts = {tienda: sum(1 for p in todos if p["tienda"] == tienda) for tienda in TIENDAS}
 
     return {
         "query":         q,
         "total":         len(todos),
-        "walmart_count": len(walmart),
-        "latorre_count": len(torre),
         "coincidencias": len(eans_comunes),
+        "counts":        counts,
         "resultados":    todos,
     }
-
-
+    
 @app.get("/buscar-ean")
 async def buscar_por_ean(ean: str = Query(..., min_length=1)):
     async with httpx.AsyncClient() as client:
@@ -283,18 +288,15 @@ async def buscar_por_ean(ean: str = Query(..., min_length=1)):
 
     asyncio.create_task(guardar_historial(todos))
 
-    walmart = [p for p in todos if p["tienda"] == "Walmart GT"]
-    torre   = [p for p in todos if p["tienda"] == "La Torre"]
+    counts = {tienda: sum(1 for p in todos if p["tienda"] == tienda) for tienda in TIENDAS}
 
     return {
         "query":         ean,
         "total":         len(todos),
-        "walmart_count": len(walmart),
-        "latorre_count": len(torre),
         "coincidencias": len(eans_comunes),
+        "counts":        counts,
         "resultados":    todos,
     }
-
 
 @app.get("/historial/{ean}")
 async def historial_ean(ean: str):

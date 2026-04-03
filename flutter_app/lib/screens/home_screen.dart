@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (query.isEmpty) return;
 
     HistorialBusquedasService.agregar(query).then((_) async {
-      final lista = await HistorialBusquedasService.obtener();
+      await HistorialBusquedasService.obtener();
       _cargarHistorial();
     });
     _controller.clear();

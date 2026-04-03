@@ -60,12 +60,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
   }
 
   List<Producto> get _productosFiltrados {
-    if (_filtro == 'Walmart GT') {
-      return _productos.where((p) => p.esWalmart).toList();
-    } else if (_filtro == 'La Torre') {
-      return _productos.where((p) => !p.esWalmart).toList();
-    }
-    return _productos;
+    if (_filtro == 'Todos') return _productos;
+    return _productos.where((p) => p.tienda == _filtro).toList();
   }
 
   String _eanKey(Producto p) => (p.ean ?? '').trim();
@@ -115,8 +111,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
     return minimos;
   }
 
-  int get _countWalmart => _productos.where((p) => p.esWalmart).length;
-  int get _countTorre => _productos.where((p) => !p.esWalmart).length;
+  List<String> get _tiendasDisponibles =>
+      _productos.map((p) => p.tienda).toSet().toList()..sort();
 
   @override
   Widget build(BuildContext context) {
@@ -141,36 +137,40 @@ class _ResultsScreenState extends State<ResultsScreen> {
           if (!_cargando)
             Container(
               color: Colors.white,
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  _ResumenChip(
-                    label: 'Todos',
-                    count: _productos.length,
-                    color: Colors.grey,
-                    seleccionado: _filtro == 'Todos',
-                    onTap: () => setState(() => _filtro = 'Todos'),
-                  ),
-                  const SizedBox(width: 8),
-                  _ResumenChip(
-                    label: 'Walmart',
-                    count: _countWalmart,
-                    color: const Color(0xFF1A75CF),
-                    seleccionado: _filtro == 'Walmart GT',
-                    onTap: () => setState(() => _filtro = 'Walmart GT'),
-                  ),
-                  const SizedBox(width: 8),
-                  _ResumenChip(
-                    label: 'La Torre',
-                    count: _countTorre,
-                    color: const Color(0xFFF36A10),
-                    seleccionado: _filtro == 'La Torre',
-                    onTap: () => setState(() => _filtro = 'La Torre'),
-                  ),
-                ],
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _ResumenChip(
+                      label: 'Todos',
+                      count: _productos.length,
+                      color: Colors.grey,
+                      seleccionado: _filtro == 'Todos',
+                      onTap: () => setState(() => _filtro = 'Todos'),
+                    ),
+                    ..._tiendasDisponibles.map((tienda) {
+                      final color = _productos
+                          .firstWhere((p) => p.tienda == tienda)
+                          .colorTienda;
+                      final count = _productos
+                          .where((p) => p.tienda == tienda)
+                          .length;
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: _ResumenChip(
+                          label: tienda,
+                          count: count,
+                          color: color,
+                          seleccionado: _filtro == tienda,
+                          onTap: () => setState(() => _filtro = tienda),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
               ),
             ),
-
           // Contenido principal
           Expanded(
             child: _cargando
@@ -308,8 +308,7 @@ class _ProductoCard extends StatelessWidget {
     required this.onTap,
   });
 
-  Color get _colorTienda =>
-      producto.esWalmart ? const Color(0xFF1A75CF) : const Color(0xFFF36A10);
+  Color get _colorTienda => producto.colorTienda;
 
   @override
   Widget build(BuildContext context) {
