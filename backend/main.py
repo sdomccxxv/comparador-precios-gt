@@ -1,11 +1,16 @@
 import os
 import asyncio
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
-from supabase import create_client, Client
+try:
+    from supabase import create_client, Client
+except ModuleNotFoundError:
+    create_client = None
+    Client = Any
 
 app = FastAPI(title="Comparador de Precios GT")
 
@@ -36,7 +41,9 @@ _SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 _SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
 supabase_client: Client | None = None
-if _SUPABASE_URL and _SUPABASE_KEY:
+if create_client is None:
+    print("[Supabase] Paquete no instalado, historial desactivado ⚠️")
+elif _SUPABASE_URL and _SUPABASE_KEY:
     supabase_client = create_client(_SUPABASE_URL, _SUPABASE_KEY)
     print("[Supabase] Cliente inicializado ✅")
 else:
