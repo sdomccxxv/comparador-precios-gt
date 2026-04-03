@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/historial_busquedas_service.dart';
 import 'result_screen.dart';
 import 'scanner_screen.dart';
 
@@ -11,15 +12,44 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _controller = TextEditingController();
+  List<String> _historial = [];
 
-  void _buscar() {
-    final query = _controller.text.trim();
+  @override
+  void initState() {
+    super.initState();
+    _cargarHistorial();
+  }
+
+  // Carga el historial guardado al abrir la pantalla
+  Future<void> _cargarHistorial() async {
+    final lista = await HistorialBusquedasService.obtener();
+    setState(() => _historial = lista);
+  }
+
+  void _buscar([String? queryOverride]) {
+    final query = (queryOverride ?? _controller.text).trim();
     if (query.isEmpty) return;
-    // Navegar inmediatamente — ResultsScreen carga los datos y muestra skeleton
+
+    HistorialBusquedasService.agregar(query).then((_) async {
+      final lista = await HistorialBusquedasService.obtener();
+      _cargarHistorial();
+    });
+    _controller.clear();
+
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => ResultsScreen(query: query)),
-    );
+    ).then((_) => _cargarHistorial());
+  }
+
+  Future<void> _eliminarBusqueda(String query) async {
+    await HistorialBusquedasService.eliminar(query);
+    _cargarHistorial();
+  }
+
+  Future<void> _limpiarHistorial() async {
+    await HistorialBusquedasService.limpiar();
+    _cargarHistorial();
   }
 
   @override
@@ -159,6 +189,81 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
+
+              // Historial de búsquedas recientes
+              if (_historial.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Recientes',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A2E),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _limpiarHistorial,
+                      child: const Text(
+                        'Limpiar',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _historial
+                      .map(
+                        (q) => GestureDetector(
+                          onTap: () => _buscar(q),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.history,
+                                  size: 14,
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  q,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF1A1A2E),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                GestureDetector(
+                                  onTap: () => _eliminarBusqueda(q),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
 
               const Spacer(),
               const Text(
