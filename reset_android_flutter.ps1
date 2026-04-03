@@ -95,9 +95,17 @@ if ($StartEmulator) {
       }
     }
 
-    if ($isReady) {
-      Ok "Emulador listo"
-    } else {
+      if ($isReady) {
+        Ok "Emulador listo"
+        Info "Esperando boot_completed..."
+        $bootDeadline = (Get-Date).AddSeconds(60)
+        while ((Get-Date) -lt $bootDeadline) {
+          $bootProp = & $adbPath shell getprop sys.boot_completed 2>$null
+          if ($bootProp.Trim() -eq "1") { break }
+          Start-Sleep -Seconds 3
+        }
+        Ok "Sistema Android listo"
+      } else {
       Warn "El emulador no paso a estado 'device' dentro de $BootTimeoutSeconds segundos"
       Warn "Revisa manualmente con: adb devices"
     }
